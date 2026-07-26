@@ -50,7 +50,7 @@ wiring nobody else publishes.
 Click **Use this template** on GitHub. You get a copy of this whole demo; keep the automation surface
 below and swap in your own app (`app/`, `lib/`, `components/`).
 
-### Into an existing repo (the fleet path)
+### Into an existing repo
 
 Copy these files:
 
@@ -110,13 +110,13 @@ pnpm check && pnpm test && pnpm build && pnpm test:e2e
 
 ## Maintenance
 
-Airlock is dogfooded: it is part of the fleet it documents, so keeping it green is the same work as
-keeping the fleet green. Two rules:
+Airlock is dogfooded: it runs the same automation it documents, so keeping it green keeps the pattern
+proven. Two rules:
 
-- **A red CI on Airlock outranks fleet work.** A broken golden reference actively spreads breakage at
-  the next copy round, so fix it first.
-- **Never move a published tag; always cut a new one.** Consuming repos diff against tags via their
-  `.github/TEMPLATE_VERSION`, and that diffing assumes tags are immutable.
+- **A red CI on Airlock is worth fixing first.** A broken reference spreads breakage to everyone who
+  copies from it.
+- **Never move a published tag; always cut a new one.** Repos that adopt Airlock diff against tags via
+  their `.github/TEMPLATE_VERSION`, and that diffing assumes tags are immutable.
 
 ## Security posture
 
