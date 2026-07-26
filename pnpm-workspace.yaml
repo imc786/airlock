@@ -1,0 +1,18 @@
+# Managed file. Edit pnpm-workspace.base.yaml (the source of truth); the live pnpm-workspace.yaml is
+# regenerated from base + `pnpm audit --fix` output by .github/workflows/audit.yml. Hand-edits to the
+# live file are reverted by the next audit run.
+
+# pnpm 11 reads project settings from here, not from a "pnpm" field in package.json.
+
+# Deny dependency build scripts by default; every package with a build script must be decided here.
+allowBuilds:
+  sharp: false # prebuilt platform binaries ship via optionalDependencies; no build needed, no image use here
+  core-js: false # postinstall is only a funding message, nothing to build
+
+# One-day supply-chain quarantine, set explicitly so strict resolution blocks day-zero packages
+# rather than silently falling back to a too-new version.
+minimumReleaseAge: 1440
+
+# Skip re-applying the age check to the already-committed lockfile on install, so cold-store CI does
+# not go red for ~24h after any dependency change.
+trustLockfile: true

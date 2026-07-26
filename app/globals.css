@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0d1117;
+  --color-paper: #ffffff;
+  --color-muted: #57606a;
+  --color-accent: #2da44e;
+  --color-line: #d0d7de;
+  --color-code-bg: #eef1f4;
+  --color-code-fg: #1f2328;
+  /* Fixed button colour (does not flip with theme) so white text keeps AA contrast in both. */
+  --color-btn: #1a7f37;
+  --color-btn-hover: #15803d;
+}
+
+/* Dark palette applied for OS-dark (unless the user forced light) and for an explicit dark choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-ink: #e6edf3;
+    --color-paper: #0d1117;
+    --color-muted: #8b949e;
+    --color-accent: #3fb950;
+    --color-line: #30363d;
+    --color-code-bg: #21262d;
+    --color-code-fg: #e6edf3;
+  }
+}
+:root[data-theme="dark"] {
+  --color-ink: #e6edf3;
+  --color-paper: #0d1117;
+  --color-muted: #8b949e;
+  --color-accent: #3fb950;
+  --color-line: #30363d;
+  --color-code-bg: #21262d;
+  --color-code-fg: #e6edf3;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Filled background so inline code reads as distinct from body text. */
+code {
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: 0.1em 0.4em;
+  border-radius: 0.3rem;
+  font-size: 0.9em;
+}
