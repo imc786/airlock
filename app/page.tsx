@@ -29,7 +29,7 @@ const failureModes = [
   },
 ];
 
-const fleetFiles = [
+const copyableFiles = [
   ".github/workflows/audit.yml",
   ".github/workflows/ci.yml",
   ".github/dependabot.yml",
@@ -136,7 +136,7 @@ export default function Home() {
             adapt the values marked for first use (allowBuilds, overrides, CSP, app specifics).
           </p>
           <ul className="space-y-1 font-mono text-xs text-muted">
-            {fleetFiles.map((file) => (
+            {copyableFiles.map((file) => (
               <li key={file}>{file}</li>
             ))}
           </ul>
