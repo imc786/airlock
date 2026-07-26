@@ -1,0 +1,120 @@
+name: Daily Audit Fix
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC daily
+  workflow_dispatch:
+
+# Write privileges are scoped to nothing here: the PR is pushed by AUTOMATION_TOKEN, not GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-fix
+  cancel-in-progress: false
+
+jobs:
+  audit-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        # No version: derived from package.json's packageManager field.
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Single source of truth: reads engines.node. No cache: this job never installs.
+          node-version-file: package.json
+
+      - name: Assert automation identity is configured
+        # Pass through env, never interpolate ${{ }} into the shell. Empty author silently reverts
+        # create-pull-request to the bot identity, which breaks Vercel's author gate.
+        env:
+          AUTOMATION_AUTHOR: ${{ vars.AUTOMATION_AUTHOR }}
+        run: |
+          if [ -z "$AUTOMATION_AUTHOR" ]; then
+            echo "::error::Set the AUTOMATION_AUTHOR repo variable (see README)."; exit 1
+          fi
+
+      - name: Assert AUTOMATION_TOKEN is valid
+        # Runs before the change gate so a revoked token fails loudly instead of hiding behind a no-PR day.
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN }}
+        run: gh api /user > /dev/null || { echo "::error::AUTOMATION_TOKEN is missing or revoked."; exit 1; }
+
+      - name: Warn if the pnpm pin is behind
+        # Dependabot does not bump the packageManager field; surface minor/major drift only (ignore
+        # patch churn) and never auto-bump, since a pnpm major needs the migration checklist.
+        run: |
+          pinned="$(node -p "require('./package.json').packageManager.split('@')[1]")"
+          latest="$(npm view pnpm version)"
+          if [ "${pinned%.*}" != "${latest%.*}" ]; then
+            echo "::warning::pnpm pin $pinned is behind latest $latest; bump packageManager by hand."
+          fi
+
+      - name: Capture pre-fix advisories
+        run: pnpm audit --json --no-optional > /tmp/audit-before.json || true
+
+      # Two-pass regeneration; ORDERING IS LOAD-BEARING (see README). Strict minimumReleaseAge is
+      # exempted only in these mutating installs.
+      - name: Reset managed config to base
+        run: cp pnpm-workspace.base.yaml pnpm-workspace.yaml
+
+      - name: Natural re-resolve (prunes stale overrides)
+        run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false
+
+      - name: Re-apply audit fixes
+        continue-on-error: true
+        run: pnpm audit --fix=override --no-optional --config.minimumReleaseAgeStrict=false
+
+      - name: Reconcile lockfile with regenerated overrides
+        run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build PR body
+        if: steps.changes.outputs.changed == 'true'
+        # Advisory titles are third-party text; write to a file and pass via body-path, never $GITHUB_OUTPUT.
+        run: |
+          {
+            echo "Regenerated \`pnpm audit --fix=override\` run. Managed overrides are rebuilt from"
+            echo "\`pnpm-workspace.base.yaml\` every run, so overrides no longer needed are pruned."
+            echo ""
+            echo "**Pre-fix advisories:**"
+            jq -r '.advisories // {} | to_entries[] | "- \(.value.severity): \(.value.module_name) (\(.value.title))"' \
+              /tmp/audit-before.json 2>/dev/null | sort -u || echo "- (advisory summary unavailable)"
+          } > /tmp/pr-body.md
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          # AUTOMATION_TOKEN triggers CI unattended and passes ci.yml's owner check. No github.token
+          # fallback: a GITHUB_TOKEN-opened PR is approval-required, so an unset secret fails loudly.
+          token: ${{ secrets.AUTOMATION_TOKEN }}
+          commit-message: "fix: audit fix for transient dependency vulnerabilities"
+          # Author = owner (via variable) so Vercel's author allowlist still builds the preview.
+          author: ${{ vars.AUTOMATION_AUTHOR }}
+          committer: ${{ vars.AUTOMATION_AUTHOR }}
+          title: "fix: audit fix for transient dependency vulnerabilities"
+          body-path: /tmp/pr-body.md
+          branch: automated/audit-fix
+          delete-branch: true
+          labels: dependencies

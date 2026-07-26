@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # Post-merge build so two independently-green auto-merges that conflict surface here, not on the next PR.
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        # No version: derived from package.json's packageManager field.
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (Biome, non-mutating gate)
+        run: pnpm check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      # tsc needs Next's generated next-env.d.ts, written only by next build, so this runs after Build.
+      - name: Type check
+        run: pnpm type-check
+
+      # No E2E here: it runs once in preview-e2e against the deployed preview.
+
+  # Run Playwright against the real Vercel preview. Skipped for forks (no preview is built for them),
+  # which also skips the auto-merge jobs that need it.
+  preview-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      deployments: read
+      pull-requests: read
+      statuses: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright (Chromium)
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Wait for Vercel preview deployment
+        id: vercel-preview
+        uses: patrickedqvist/wait-for-vercel-preview@d7982701e6fcd3ae073bff929e408e004404d38d # v1.3.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allow_inactive: false
+          max_timeout: 600
+
+      - name: End-to-end tests (against Vercel preview)
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.vercel-preview.outputs.url }}
+        run: pnpm test:e2e
+
+  # Auto-merge Dependabot minor/patch PRs once both gates pass. Dependabot pushes to this repo (not a
+  # fork), so it gets a preview and preview-e2e applies.
+  dependabot-auto-merge:
+    runs-on: ubuntu-latest
+    needs: [build, preview-e2e]
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge minor and patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-minor' || steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        # --match-head-commit ties the merge to the exact tested commit, closing the post-CI push race.
+        run: gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Auto-merge the daily audit-fix PR only once both gates pass: audit --fix can inject breaking
+  # major overrides, so branch name + actor alone is never enough.
+  audit-fix-auto-merge:
+    runs-on: ubuntu-latest
+    needs: [build, preview-e2e]
+    if: >-
+      github.head_ref == 'automated/audit-fix' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == github.repository_owner
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      # Blast-radius guard: only AUTOMATION_TOKEN reaches this job, so this matters only if that PAT is
+      # compromised. Fail loudly. The --match-head-commit flag below still pins to the tested SHA.
+      - name: Assert audit PR only touches dependency config
+        run: |
+          unexpected="$(gh pr diff --name-only "$PR_URL" \
+            | grep -vE '^(pnpm-lock\.yaml|pnpm-workspace\.yaml)$' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "::error::Audit PR changes files outside {pnpm-lock.yaml, pnpm-workspace.yaml}:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge audit fix PR
+        run: gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

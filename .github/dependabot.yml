@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Quarantine freshly published versions before adoption; security updates bypass cooldown, so CVE
+    # fixes still arrive immediately. Windows >=3 days also keep strict minimumReleaseAge quiet.
+    cooldown:
+      semver-patch-days: 3
+      semver-minor-days: 7
+      semver-major-days: 30
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Node 24 is the pinned LTS; do not jump @types/node to the next major.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7.0 breaks `next build` on Next 16; hold on 6.x.
+      - dependency-name: "typescript"
+        versions: ["7.0.x"]
+
+  # Keep the SHA-pinned GitHub Actions current; this is what lets the reference self-update.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
