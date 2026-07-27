@@ -29,7 +29,7 @@ const failureModes = [
   },
   {
     title: "audit --fix=override emits overlapping overrides",
-    body: "It writes one override per advisory, so you can see stacked selectors for the same package (this site's own live pnpm-workspace.yaml carries three overlapping postcss overrides). It looks corrupted but is not: the daily regeneration rebuilds the set from base every run, so it never accumulates beyond the current advisories.",
+    body: "It writes one override per advisory, so you can see stacked selectors for the same package (this site's own live pnpm-workspace.yaml has carried overlapping postcss overrides as a live example). It looks corrupted but is not: the daily regeneration rebuilds the set from base every run, so it never accumulates beyond the current advisories.",
   },
 ];
 

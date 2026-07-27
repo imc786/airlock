@@ -34,10 +34,11 @@ unattended:
   so the one dependency the whole pipeline runs on is the one nothing auto-maintains. The audit job
   emits a loud warning when pnpm falls behind; the bump stays by hand, because a pnpm major needs a
   migration checklist.
-- **`--fix=override` emits one override per advisory, so selectors overlap.** This repo's own live
-  `pnpm-workspace.yaml` carries three overlapping `postcss` overrides (one version can match more than
-  one selector). It looks like a corrupted config but is not: the daily regeneration rebuilds the
-  managed set from the base every run, so it never accumulates beyond the advisories currently open.
+- **`--fix=override` emits one override per advisory, so selectors can overlap.** This repo's own live
+  `pnpm-workspace.yaml` has carried overlapping `postcss` overrides (one version matching more than one
+  selector) as a live example. It looks like a corrupted config but is not: the daily regeneration
+  rebuilds the managed set from the base every run, so it never accumulates beyond the advisories
+  currently open.
 
 ## But why not Renovate?
 
