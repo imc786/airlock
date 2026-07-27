@@ -103,8 +103,8 @@ jobs:
             # Three cases: audit output missing/unparseable/error-shaped (the pre-fix audit did not
             # complete), valid with advisories, or valid with none. Do NOT conflate an outage with zero.
             # has("advisories") accepts only real audit output (pnpm always emits the key, even as {}),
-            # so a valid-JSON error object falls through to "did not complete". -s guards the empty file
-            # (jq exits 0 on zero JSON values, so the key check alone is not enough).
+            # so a valid-JSON error object falls through to "did not complete". -s is belt-and-braces:
+            # with -e an empty file already fails (exit 4), kept so the guard does not rely on that.
             if [ -s /tmp/audit-before.json ] && jq -e 'has("advisories")' /tmp/audit-before.json >/dev/null 2>&1; then
               advisories="$(jq -r '.advisories // {} | to_entries[] | "- \(.value.severity): \(.value.module_name) (\(.value.title))"' \
                 /tmp/audit-before.json 2>/dev/null | sort -u)"
