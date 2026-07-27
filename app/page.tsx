@@ -27,6 +27,10 @@ const failureModes = [
     title: "Dependabot does not bump the pnpm pin",
     body: "The packageManager field is left untouched by Dependabot, so the one dependency the whole pipeline runs on is the one nothing auto-maintains. The audit job emits a loud warning when pnpm falls behind; the bump stays by hand, because a pnpm major needs a migration checklist.",
   },
+  {
+    title: "audit --fix=override emits overlapping overrides",
+    body: "It writes one override per advisory, so you can see stacked selectors for the same package (this site's own live pnpm-workspace.yaml carries three overlapping postcss overrides). It looks corrupted but is not: the daily regeneration rebuilds the set from base every run, so it never accumulates beyond the current advisories.",
+  },
 ];
 
 const copyableFiles = [
@@ -34,7 +38,7 @@ const copyableFiles = [
   ".github/workflows/ci.yml",
   ".github/dependabot.yml",
   ".github/TEMPLATE_VERSION",
-  "pnpm-workspace.base.yaml",
+  "pnpm-workspace.base.yaml + the live pnpm-workspace.yaml",
   "package.json (the packageManager, engines and script pins)",
   "playwright.config.ts (the PLAYWRIGHT_BASE_URL pattern)",
 ];

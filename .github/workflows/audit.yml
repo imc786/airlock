@@ -62,9 +62,6 @@ jobs:
             echo "::warning::pnpm pin $pinned is behind latest $latest; bump packageManager by hand."
           fi
 
-      - name: Capture pre-fix advisories
-        run: pnpm audit --json --no-optional > /tmp/audit-before.json || true
-
       # Two-pass regeneration; ORDERING IS LOAD-BEARING (see README). Strict minimumReleaseAge is
       # exempted only in these mutating installs.
       - name: Reset managed config to base
@@ -72,6 +69,12 @@ jobs:
 
       - name: Natural re-resolve (prunes stale overrides)
         run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false
+
+      # Capture against the natural (post-reset, un-fixed) state so the PR body reports the FULL set the
+      # regenerated overrides address, not just what is new since the committed lockfile. pnpm audit
+      # reads the lockfile + registry (no install), so this is store-independent.
+      - name: Capture advisories the overrides address
+        run: pnpm audit --json --no-optional > /tmp/audit-before.json || true
 
       - name: Re-apply audit fixes
         continue-on-error: true
@@ -97,9 +100,23 @@ jobs:
             echo "Regenerated \`pnpm audit --fix=override\` run. Managed overrides are rebuilt from"
             echo "\`pnpm-workspace.base.yaml\` every run, so overrides no longer needed are pruned."
             echo ""
-            echo "**Pre-fix advisories:**"
-            jq -r '.advisories // {} | to_entries[] | "- \(.value.severity): \(.value.module_name) (\(.value.title))"' \
-              /tmp/audit-before.json 2>/dev/null | sort -u || echo "- (advisory summary unavailable)"
+            # Three cases: audit output missing/empty/unparseable (the pre-fix audit did not complete),
+            # valid with advisories, or valid with none. Do NOT conflate an outage with zero advisories.
+            # `-s` guards the empty file (jq empty succeeds on zero JSON values, so it alone is not enough).
+            if [ -s /tmp/audit-before.json ] && jq empty /tmp/audit-before.json 2>/dev/null; then
+              advisories="$(jq -r '.advisories // {} | to_entries[] | "- \(.value.severity): \(.value.module_name) (\(.value.title))"' \
+                /tmp/audit-before.json 2>/dev/null | sort -u)"
+              if [ -n "$advisories" ]; then
+                echo "**Advisories addressed by the regenerated overrides:**"
+                echo "$advisories"
+              else
+                echo "No open advisories against the natural (base) resolution; this PR prunes overrides"
+                echo "that are no longer needed."
+              fi
+            else
+              echo "Advisory summary unavailable (the pre-fix audit did not complete); see the diff for"
+              echo "the regenerated overrides."
+            fi
           } > /tmp/pr-body.md
 
       - name: Create pull request
