@@ -34,6 +34,11 @@ unattended:
   so the one dependency the whole pipeline runs on is the one nothing auto-maintains. The audit job
   emits a loud warning when pnpm falls behind; the bump stays by hand, because a pnpm major needs a
   migration checklist.
+- **`--fix=override` emits one override per advisory, so selectors can overlap.** This repo's own live
+  `pnpm-workspace.yaml` has carried overlapping `postcss` overrides (one version matching more than one
+  selector) as a live example. It looks like a corrupted config but is not: the daily regeneration
+  rebuilds the managed set from the base every run, so it never accumulates beyond the advisories
+  currently open.
 
 ## But why not Renovate?
 
@@ -58,7 +63,8 @@ Copy these files:
 - `.github/workflows/ci.yml`
 - `.github/dependabot.yml`
 - `.github/TEMPLATE_VERSION`
-- `pnpm-workspace.base.yaml`
+- `pnpm-workspace.base.yaml` **and** the live `pnpm-workspace.yaml` (see step 4: the live file must
+  exist from day one, or your first CI install runs with no `trustLockfile`/`allowBuilds`)
 - the `packageManager`, `engines` and lint/check/test script pins from `package.json`
 - the `PLAYWRIGHT_BASE_URL` pattern from `playwright.config.ts`
 
@@ -69,8 +75,13 @@ Then:
    repo secret `AUTOMATION_TOKEN`.
 2. Set the repo variable `AUTOMATION_AUTHOR` to `NAME <ID+USERNAME@users.noreply.github.com>` for the
    owner account, so Vercel's author allowlist still builds the preview.
-3. Set `.github/TEMPLATE_VERSION` to the tag you copied, for example `airlock@v1`.
-4. Adapt the values marked for first use (below).
+3. Set `.github/TEMPLATE_VERSION` to the tag you copied, for example `airlock@v2`. When re-syncing
+   later, [`CHANGELOG.md`](CHANGELOG.md) lists what changed per tag and any action required.
+4. Create the live workspace file from the base and commit both: `cp pnpm-workspace.base.yaml
+   pnpm-workspace.yaml`. It must exist from day one, or your first `pnpm install --frozen-lockfile` in
+   CI runs with no `trustLockfile` (the ~24h cold-store red) and no `allowBuilds` protection. The audit
+   job regenerates it thereafter.
+5. Adapt the values marked for first use (below).
 
 ### Adapt on first use
 
@@ -93,6 +104,9 @@ Node needs no edit: the workflows read `engines.node` from `package.json` via
   `pnpm-workspace.base.yaml`, re-resolves the lockfile, re-applies `pnpm audit --fix=override`,
   reconciles the lockfile, and opens a PR only if something changed. It also fails loudly if the
   automation identity or token is missing, and warns when the pinned pnpm falls behind the registry.
+  The audit runs with `--no-optional`, a deliberate scope choice: optional dependencies (where
+  platform binaries like sharp's prebuilt artifacts live) are outside the audit lane and are covered
+  by Dependabot version updates instead.
 - **`.github/workflows/ci.yml`** runs a local build gate (lint, unit tests, build, type-check) and a
   preview-e2e gate that waits for the Vercel preview and runs Playwright against it. Both audit and
   Dependabot PRs auto-merge only after both gates pass, pinned to the tested commit.
