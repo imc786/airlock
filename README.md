@@ -40,6 +40,34 @@ unattended:
   rebuilds the managed set from the base every run, so it never accumulates beyond the advisories
   currently open.
 
+## Threat model, honestly
+
+This template assumes a **single trusted owner**. That assumption does real work, so it is stated
+rather than implied:
+
+- **No CODEOWNERS or required review on `.github/workflows/`.** Those controls are only enforceable
+  through branch protection, which the unattended solo design deliberately omits. Workflow files run
+  with token access and nothing gates changes to them except the owner's account, so the actual
+  control at this layer is account security (passkeys, 2FA) and PAT hygiene, not review process. With
+  a second maintainer, add branch protection and CODEOWNERS and this section stops applying.
+- **`AUTOMATION_TOKEN` is a repo-level secret**, readable by any workflow in this repo and not gated
+  behind a GitHub Environment (an Environment cannot scope a secret to a specific workflow file, which
+  is the protection that would matter here). Compensating controls: the PAT is fine-grained,
+  single-repo, Contents and Pull requests only; the auto-merge job asserts changed files are limited
+  to `pnpm-workspace.yaml` and `pnpm-lock.yaml`, bounding what a stolen token can merge unattended;
+  and the audit job never materialises `node_modules`, so no dependency code executes next to the
+  token.
+- **Exact version pinning: checklists ask for it, this repo floats ranges.** `package.json` uses `^`
+  ranges, but every CI install is `--frozen-lockfile`, so nothing resolves at run time. The risk that
+  exact pinning addresses belongs to lockfile-less workflows. Range floors plus lockfile plus cooldown
+  is the deliberate design.
+- **`patrickedqvist/wait-for-vercel-preview`** is the one single-maintainer community action in the
+  set. SHA-pinning removes the tag-repointing vector and, as a bundled Node action, it pulls no
+  transitive actions at run time. Re-vet the diff when bumping its pin; it is the dependency most
+  worth two minutes of suspicion.
+- **Provenance attestations are not enforced.** npm has `npm audit signatures`; pnpm has no
+  equivalent first-class verification today. Tracked as a watch item, not a control.
+
 ## But why not Renovate?
 
 Renovate covers the Dependabot half of this well: automerge, minimum release age, and lockfile
@@ -82,6 +110,27 @@ Then:
    CI runs with no `trustLockfile` (the ~24h cold-store red) and no `allowBuilds` protection. The audit
    job regenerates it thereafter.
 5. Adapt the values marked for first use (below).
+
+### Repo settings the template cannot carry
+
+Template files cannot express repository settings, so "Use this template" does not copy these. All
+four live under **Settings > Actions > General** and take two minutes total:
+
+1. **Workflow permissions: read repository contents (read-only).** Both workflows declare explicit
+   `permissions:` blocks, so this default never applies to them. It exists to protect the workflow
+   you add next year without one.
+2. **Untick "Allow GitHub Actions to create and approve pull requests."** Airlock needs neither: the
+   audit PR is created by the `AUTOMATION_TOKEN` PAT, not `GITHUB_TOKEN`, and auto-merge is a merge,
+   not an approval. Most auto-merge setups have to leave this on; this design is shaped so you can
+   turn it off.
+3. **Fork pull request workflows: require approval for all outside collaborators.** On a public repo,
+   fork PRs trigger the build job (read-only and secretless: `pull_request` never exposes secrets to
+   forks, and the preview and merge jobs are guarded). This setting is about runner-minute abuse and
+   probing, not secrets.
+4. **Allow select actions**, restricted to the exact list this template uses: `actions/*`,
+   `pnpm/action-setup`, `dependabot/fetch-metadata`, `peter-evans/create-pull-request`,
+   `patrickedqvist/wait-for-vercel-preview`, `step-security/harden-runner`. A malicious marketplace
+   action then cannot be adopted here without an explicit settings change.
 
 ### Adapt on first use
 
