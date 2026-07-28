@@ -31,6 +31,10 @@ const failureModes = [
     title: "audit --fix=override emits overlapping overrides",
     body: "It writes one override per advisory, so you can see stacked selectors for the same package (this site's own live pnpm-workspace.yaml has carried overlapping postcss overrides as a live example). It looks corrupted but is not: the daily regeneration rebuilds the set from base every run, so it never accumulates beyond the current advisories.",
   },
+  {
+    title: "Template files cannot carry repo settings",
+    body: "'Use this template' copies files, not Settings. Default token permissions, disabling workflow-created PR approvals, the fork-PR approval policy and the action allowlist all live under Settings > Actions; the README lists the four checkboxes. Airlock is shaped so 'Allow GitHub Actions to create and approve pull requests' can be off: the audit PR comes from a PAT and auto-merge is a merge, not an approval.",
+  },
 ];
 
 const copyableFiles = [
@@ -41,6 +45,7 @@ const copyableFiles = [
   "pnpm-workspace.base.yaml + the live pnpm-workspace.yaml",
   "package.json (the packageManager, engines and script pins)",
   "playwright.config.ts (the PLAYWRIGHT_BASE_URL pattern)",
+  "plus 4 repo settings the files can't carry (see README)",
 ];
 
 export default function Home() {

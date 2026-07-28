@@ -5,6 +5,22 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v3 - 2026-07-28
+
+- **audit.yml / ci.yml:** `step-security/harden-runner` added to every job. Block-mode egress
+  allowlists on both auto-merge jobs; audit mode on the PAT-holding audit job, build and preview-e2e,
+  to observe the real endpoint set before blocking (the audit job is promoted to block first in a
+  later version). Validated against Aikido's GitHub Actions security checklist; the remaining items
+  are repository settings, documented in the README.
+- **README:** new "Repo settings the template cannot carry" (four Settings > Actions checkboxes,
+  including turning off "Allow GitHub Actions to create and approve pull requests", which this design
+  uniquely permits) and "Threat model, honestly" (single-owner assumption, PAT scoping,
+  frozen-lockfile versus exact pins, provenance watch item).
+- **Site:** settings note in the copy list and a sixth failure-mode card.
+
+**Adopter action:** re-copy both workflow files, then apply the four repo settings from the README.
+They are not carried by files and "Use this template" does not set them.
+
 ## v2 - 2026-07-27
 
 - **audit.yml:** the PR body now reports the full advisory set the regenerated overrides address,

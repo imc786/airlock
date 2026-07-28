@@ -20,6 +20,12 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      # Audit mode: observe egress. Promote to block once the endpoint set is confirmed over a few runs.
+      - name: Harden runner (audit egress)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -67,6 +73,12 @@ jobs:
       statuses: read
 
     steps:
+      # Audit mode permanently: Playwright hits a dynamic preview URL, so a block allowlist is not practical.
+      - name: Harden runner (audit egress)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -111,6 +123,15 @@ jobs:
       pull-requests: write
 
     steps:
+      # Merge jobs only talk to GitHub, so egress is blocked to exactly that.
+      - name: Harden runner (block non-allowlisted egress)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
@@ -140,6 +161,15 @@ jobs:
       pull-requests: write
 
     steps:
+      # Merge jobs only talk to GitHub, so egress is blocked to exactly that.
+      - name: Harden runner (block non-allowlisted egress)
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+
       # Blast-radius guard: only AUTOMATION_TOKEN reaches this job, so this matters only if that PAT is
       # compromised. Fail loudly. The --match-head-commit flag below still pins to the tested SHA.
       - name: Assert audit PR only touches dependency config
