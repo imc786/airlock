@@ -45,11 +45,12 @@ unattended:
 This template assumes a **single trusted owner**. That assumption shapes several decisions below, so
 it is stated up front:
 
-- **No CODEOWNERS or required review on `.github/workflows/`.** Those controls are only enforceable
-  through branch protection, which the unattended solo design deliberately omits. Workflow files run
-  with token access and nothing gates changes to them except the owner's account, so the actual
-  control at this layer is account security (passkeys, 2FA) and PAT hygiene, not review process. With
-  a second maintainer, add branch protection and CODEOWNERS and this section stops applying.
+- **No CODEOWNERS or required review on `.github/workflows/`.** This public repo enforces branch
+  protection (a ruleset requiring a PR plus green `build` and `preview-e2e` checks), but it does not
+  require review and sets no CODEOWNERS, so nothing gates a change to the workflow files themselves
+  beyond your own account. The real control at this layer is account security (passkeys, 2FA) and PAT
+  hygiene, not a review process. If you bring on a second maintainer, add required reviews and
+  CODEOWNERS and this caveat stops applying.
 - **`AUTOMATION_TOKEN` is a repo-level secret**, readable by any workflow in this repo and not gated
   behind a GitHub Environment (an Environment cannot scope a secret to a specific workflow file, which
   is the protection that would matter here). Compensating controls: the PAT is fine-grained,
@@ -187,8 +188,10 @@ The build and preview-e2e gates verify functionality, not safety: a competently 
 passes them fine. The real install-time protections are `allowBuilds` (deny-by-default), Dependabot
 cooldown, SHA-matched merges, SHA-pinned actions, and the minimal-privilege `--lockfile-only` audit
 job. The audit lane deliberately fast-tracks CVE fixes and so is the one lane where cooldown does not
-apply. There is no branch protection on this plan, so the workflow ordering protects only the
-automated merge paths; a human with write access can still merge manually.
+apply. This public repo enforces branch protection, so nothing reaches `main` except through a PR
+that passes the gates. Your own project repos might not have branch protection enabled (for example a
+private repo on a free plan), in which case the workflow ordering protects only the automated merge
+paths and anyone with write access can still merge manually.
 
 ## Licence
 
