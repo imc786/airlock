@@ -5,7 +5,7 @@ The golden pnpm 11 + Dependabot + audit-fix CI template for solo Next.js on Verc
 Airlock is a CI-green reference that wires together pnpm 11 supply-chain defaults, a regenerating
 (not appending) audit-fix pipeline, Dependabot cooldown, and SHA-matched unattended auto-merge. It is
 a live repository, not a snapshot: its own workflows run daily and its own Dependabot keeps the action
-SHAs current, so the reference stays honest rather than rotting.
+SHAs current, so the reference stays current instead of drifting out of date.
 
 This repo is the source of truth. The version other repos copy is recorded in
 [`.github/TEMPLATE_VERSION`](.github/TEMPLATE_VERSION), and the running site displays it.
@@ -40,10 +40,10 @@ unattended:
   rebuilds the managed set from the base every run, so it never accumulates beyond the advisories
   currently open.
 
-## Threat model, honestly
+## Threat model
 
-This template assumes a **single trusted owner**. That assumption does real work, so it is stated
-rather than implied:
+This template assumes a **single trusted owner**. That assumption shapes several decisions below, so
+it is stated up front:
 
 - **No CODEOWNERS or required review on `.github/workflows/`.** Those controls are only enforceable
   through branch protection, which the unattended solo design deliberately omits. Workflow files run
@@ -63,18 +63,18 @@ rather than implied:
   is the deliberate design.
 - **`patrickedqvist/wait-for-vercel-preview`** is the one single-maintainer community action in the
   set. SHA-pinning removes the tag-repointing vector and, as a bundled Node action, it pulls no
-  transitive actions at run time. Re-vet the diff when bumping its pin; it is the dependency most
-  worth two minutes of suspicion.
+  transitive actions at run time. Re-vet the diff when bumping its pin; it is the dependency here
+  most worth close scrutiny.
 - **Provenance attestations are not enforced.** npm has `npm audit signatures`; pnpm has no
   equivalent first-class verification today. Tracked as a watch item, not a control.
 
-## But why not Renovate?
+## Comparison with Renovate
 
 Renovate covers the Dependabot half of this well: automerge, minimum release age, and lockfile
 maintenance. Airlock's novel half is pnpm-11-specific: the `audit --fix=override` regeneration
 pipeline, the strict / `trustLockfile` / regen interaction, and override provenance via a committed
 base template. If that half is not your problem, Renovate may be the better fit. If it is, this is the
-wiring nobody else publishes.
+part that is hard to assemble from the docs alone.
 
 ## How to adopt
 
@@ -103,7 +103,7 @@ Then:
    repo secret `AUTOMATION_TOKEN`.
 2. Set the repo variable `AUTOMATION_AUTHOR` to `NAME <ID+USERNAME@users.noreply.github.com>` for the
    owner account, so Vercel's author allowlist still builds the preview.
-3. Set `.github/TEMPLATE_VERSION` to the tag you copied, for example `airlock@v2`. When re-syncing
+3. Set `.github/TEMPLATE_VERSION` to the tag you copied, for example `airlock@v4`. When re-syncing
    later, [`CHANGELOG.md`](CHANGELOG.md) lists what changed per tag and any action required.
 4. Create the live workspace file from the base and commit both: `cp pnpm-workspace.base.yaml
    pnpm-workspace.yaml`. It must exist from day one, or your first `pnpm install --frozen-lockfile` in
