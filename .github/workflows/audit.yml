@@ -21,12 +21,16 @@ jobs:
       contents: read
 
     steps:
-      # Audit mode: observe egress. This job holds the write PAT, so promote it to block first once a
-      # couple of runs confirm the endpoint set (github.com, api.github.com, registry.npmjs.org, ...).
-      - name: Harden runner (audit egress)
+      # Egress locked to the confirmed set. This job holds the write PAT, so any call beyond these three
+      # endpoints is a supply-chain signal, not noise; promoted from audit after runs converged here.
+      - name: Harden runner (block egress)
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            registry.npmjs.org:443
 
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

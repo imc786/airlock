@@ -5,6 +5,18 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v4 - 2026-07-31
+
+- **audit.yml:** `step-security/harden-runner` egress promoted from audit to **block** on the
+  PAT-holding audit job, completing the follow-up v3 flagged. The allowlist is the endpoint set six
+  daily runs converged on: `github.com`, `api.github.com`, `registry.npmjs.org`. This job holds the
+  write PAT, so a call to anything else now fails the run instead of being logged.
+- **package.json:** `packageManager` bumped `pnpm@11.17.0` -> `pnpm@11.18.0` (current `latest`; 11.19
+  is intentionally skipped until it carries the dist-tag). No change to the audit pipeline behaviour.
+
+**Adopter action:** re-copy `.github/workflows/audit.yml` and bump the `packageManager` pin to
+`pnpm@11.18.0`.
+
 ## v3 - 2026-07-28
 
 - **audit.yml / ci.yml:** `step-security/harden-runner` added to every job. Block-mode egress
