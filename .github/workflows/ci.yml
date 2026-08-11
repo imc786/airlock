@@ -22,7 +22,7 @@ jobs:
     steps:
       # Audit mode: observe egress. Promote to block once the endpoint set is confirmed over a few runs.
       - name: Harden runner (audit egress)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
         with:
           egress-policy: audit
 
@@ -75,7 +75,7 @@ jobs:
     steps:
       # Audit mode permanently: Playwright hits a dynamic preview URL, so a block allowlist is not practical.
       - name: Harden runner (audit egress)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
         with:
           egress-policy: audit
 
@@ -125,7 +125,7 @@ jobs:
     steps:
       # Merge jobs only talk to GitHub, so egress is blocked to exactly that.
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -163,7 +163,7 @@ jobs:
     steps:
       # Merge jobs only talk to GitHub, so egress is blocked to exactly that.
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
         with:
           egress-policy: block
           allowed-endpoints: >
