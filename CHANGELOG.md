@@ -5,6 +5,19 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v5 - 2026-08-12
+
+- **package.json:** `packageManager` bumped `pnpm@11.18.0` -> `pnpm@11.21.0` (current `latest`). The
+  11.19–11.21 minors are lockfile-neutral for this template: the changes touching areas it uses
+  (`minimumReleaseAge` correctness and resolution performance, lockfile determinism) are fixes in its
+  favour; the one behaviour change (11.20's registry-qualified lockfile keys) applies only to repos
+  using named registries, which this template does not. Lockfile format is unchanged (`9.0`); a
+  `--frozen-lockfile` install stays valid, no regeneration needed.
+- **README:** a subtle note that a private-repo variant of this template is maintained separately.
+
+**Adopter action:** bump the `packageManager` pin to `pnpm@11.21.0` and verify a `--frozen-lockfile`
+install + build. No workflow changes.
+
 ## v4 - 2026-07-31
 
 - **audit.yml:** `step-security/harden-runner` egress promoted from audit to **block** on the

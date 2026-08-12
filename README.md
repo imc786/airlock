@@ -104,7 +104,7 @@ Then:
    repo secret `AUTOMATION_TOKEN`.
 2. Set the repo variable `AUTOMATION_AUTHOR` to `NAME <ID+USERNAME@users.noreply.github.com>` for the
    owner account, so Vercel's author allowlist still builds the preview.
-3. Set `.github/TEMPLATE_VERSION` to the tag you copied, for example `airlock@v4`. When re-syncing
+3. Set `.github/TEMPLATE_VERSION` to the tag you copied, for example `airlock@v5`. When re-syncing
    later, [`CHANGELOG.md`](CHANGELOG.md) lists what changed per tag and any action required.
 4. Create the live workspace file from the base and commit both: `cp pnpm-workspace.base.yaml
    pnpm-workspace.yaml`. It must exist from day one, or your first `pnpm install --frozen-lockfile` in
@@ -196,3 +196,8 @@ paths and anyone with write access can still merge manually.
 ## Licence
 
 MIT. Built by [Western Pixel](https://westernpixel.com).
+
+---
+
+<sub>A private-repo variant of this template is maintained separately, adapted for private single-owner
+repos. [Get in touch](https://westernpixel.com) to learn more.</sub>
