@@ -5,6 +5,25 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v7 - 2026-08-14
+
+- **tests/workflow-guards.test.ts:** new. Both v6 defects were shell and control-flow errors that read
+  as correct, so they are covered by execution rather than review. The audit-PR file-scope guard is
+  extracted from the shipped `ci.yml` (not copied, which would rot) and run under `bash -e` against a
+  stubbed `gh`: a dependency-only diff passes; an unexpected file, an API error, an empty file list and
+  an error following allowed output all fail. The audit job is asserted to allow exactly one
+  `continue-on-error` step, and to run `pnpm audit --no-optional` (pinned exactly, so a trailing
+  `|| true` cannot slip past) between reconciliation and the change gate. Verified against the v5
+  workflows, where five of the assertions fail, and by mutation: appending `|| true` to the gate,
+  moving the gate before reconciliation, and reattaching `|| true` to the guard's fetch each kill
+  exactly one test.
+
+**Adopter action:** copy `tests/workflow-guards.test.ts` if the repo already has a Vitest lane, where
+it runs in the existing build gate and verifies that repo's own copy of the workflows. A repo without
+one needs the `vitest` devDependency, a config covering `tests/**/*.test.ts`, a `test` script and a
+`pnpm test` step in `ci.yml` before the file does anything, so weigh that against skipping it: the v6
+workflows are complete on their own, and this release does not change them.
+
 ## v6 - 2026-08-14
 
 - **audit.yml:** a mandatory `pnpm audit --no-optional` now runs after lockfile reconciliation and
