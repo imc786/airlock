@@ -152,8 +152,12 @@ Node needs no edit: the workflows read `engines.node` from `package.json` via
 
 - **`.github/workflows/audit.yml`** runs daily. It resets `pnpm-workspace.yaml` to
   `pnpm-workspace.base.yaml`, re-resolves the lockfile, re-applies `pnpm audit --fix=override`,
-  reconciles the lockfile, and opens a PR only if something changed. It also fails loudly if the
-  automation identity or token is missing, and warns when the pinned pnpm falls behind the registry.
+  reconciles the lockfile, and opens a PR only if something changed. The fix step is
+  `continue-on-error`, so a mandatory `pnpm audit` runs after reconciliation and fails the job before
+  any PR is opened: a failed fix must never ship a PR that prunes live overrides. A new advisory with
+  no published fix therefore turns the job red until you add it to `auditConfig.ignoreGhsas` or a
+  patched release lands. It also fails loudly if the automation identity or token is missing, and
+  warns when the pinned pnpm falls behind the registry.
   The audit runs with `--no-optional`, a deliberate scope choice: optional dependencies (where
   platform binaries like sharp's prebuilt artifacts live) are outside the audit lane and are covered
   by Dependabot version updates instead.

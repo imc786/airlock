@@ -5,6 +5,23 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v6 - 2026-08-14
+
+- **audit.yml:** a mandatory `pnpm audit --no-optional` now runs after lockfile reconciliation and
+  before the change gate. `Re-apply audit fixes` is `continue-on-error` and the regeneration resets
+  `pnpm-workspace.yaml` to base first, so a failed or partial fix previously opened an
+  auto-mergeable PR whose entire content was the removal of live overrides. The job now fails closed
+  instead. Advisories listed in `auditConfig.ignoreGhsas` do not trip it.
+- **ci.yml:** the audit-PR file-scope guard fetches the changed-file list before filtering it.
+  `gh pr diff ... | grep ... || true` swallowed API failures, and the default `run` shell sets no
+  `pipefail`, so an unreachable API read as "no unexpected files" and the PR merged unattended. An
+  empty file list is now rejected too.
+- **README:** documents the fail-closed audit step, including that a new advisory with no published
+  fix turns the daily job red until it is added to `auditConfig.ignoreGhsas` or a patch ships.
+
+**Adopter action:** re-copy `.github/workflows/audit.yml` and `.github/workflows/ci.yml`. No
+dependency or config changes.
+
 ## v5 - 2026-08-12
 
 - **package.json:** `packageManager` bumped `pnpm@11.18.0` -> `pnpm@11.21.0` (current `latest`). The

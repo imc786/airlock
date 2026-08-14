@@ -174,8 +174,10 @@ jobs:
       # compromised. Fail loudly. The --match-head-commit flag below still pins to the tested SHA.
       - name: Assert audit PR only touches dependency config
         run: |
-          unexpected="$(gh pr diff --name-only "$PR_URL" \
-            | grep -vE '^(pnpm-lock\.yaml|pnpm-workspace\.yaml)$' || true)"
+          # Fetch first so a gh failure trips set -e; piped into grep it would read as safe.
+          files="$(gh pr diff --name-only "$PR_URL")"
+          [ -n "$files" ] || { echo "::error::gh pr diff returned no files."; exit 1; }
+          unexpected="$(printf '%s\n' "$files" | grep -vE '^(pnpm-lock\.yaml|pnpm-workspace\.yaml)$' || true)"
           if [ -n "$unexpected" ]; then
             echo "::error::Audit PR changes files outside {pnpm-lock.yaml, pnpm-workspace.yaml}:"
             printf '%s\n' "$unexpected"

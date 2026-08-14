@@ -94,6 +94,11 @@ jobs:
       - name: Reconcile lockfile with regenerated overrides
         run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false
 
+      - name: Fail closed if advisories remain
+        # The fix step is continue-on-error, so without this a failed fix opens an auto-mergeable PR
+        # that strips the overrides it was meant to regenerate. GHSAs in ignoreGhsas do not count.
+        run: pnpm audit --no-optional
+
       - name: Check for changes
         id: changes
         run: |
