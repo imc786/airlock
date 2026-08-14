@@ -92,6 +92,11 @@ Copy these files:
 - `.github/workflows/ci.yml`
 - `.github/dependabot.yml`
 - `.github/TEMPLATE_VERSION`
+- `tests/workflow-guards.test.ts`, if you have a unit-test lane. It asserts your copy of the two
+  workflows still fails closed, so it is only worth copying alongside them. It needs the `vitest`
+  devDependency, a config whose `include` covers `tests/**/*.test.ts`, a `test` script, and a
+  `pnpm test` step in `ci.yml`'s build job. Repos with no unit-test lane must add those four first,
+  or skip the file: the workflows themselves are complete without it
 - `pnpm-workspace.base.yaml` **and** the live `pnpm-workspace.yaml` (see step 4: the live file must
   exist from day one, or your first CI install runs with no `trustLockfile`/`allowBuilds`)
 - the `packageManager`, `engines` and lint/check/test script pins from `package.json`
