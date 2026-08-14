@@ -25,12 +25,12 @@
   },
   "dependencies": {
     "next": "^16.3.0",
-    "posthog-js": "^1.413.2",
+    "posthog-js": "^1.413.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.7",
+    "@biomejs/biome": "^2.5.8",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.13.2",
