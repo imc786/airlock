@@ -21,7 +21,7 @@ export const controls: Control[] = [
     id: "allow-builds",
     title: "Deny-by-default build scripts",
     summary:
-      "pnpm 11 blocks dependency build scripts unless each is explicitly allowed, keeping the install-time attack surface minimal.",
+      "pnpm blocks dependency build scripts unless each is explicitly allowed, keeping the install-time attack surface minimal.",
   },
   {
     id: "cooldown",

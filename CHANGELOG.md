@@ -5,6 +5,38 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v8 - 2026-09-13
+
+- **package.json:** `packageManager` bumped `pnpm@11.21.0` -> `pnpm@12.4.1`, a major. `engines.node`
+  is unchanged at `">=24 <25"`: pnpm 12 WIDENS its own requirement to `>=18`, so the pin stays valid.
+  Of pnpm 12's breaking changes, three miss this template entirely (no `engineStrict`, no
+  `--frozen-lockfile false`, no git-protocol dependencies); the two that could bite are the new strict
+  validation of `pnpm-workspace.yaml` keys and the `packageManager` lockfile record below. Every
+  setting this template uses (`allowBuilds`, `minimumReleaseAge`, `trustLockfile`,
+  `minimumReleaseAgeExclude`, `overrides`, `auditConfig.ignoreGhsas`) survives that validation.
+- **pnpm-lock.yaml:** regenerated IN THE SAME COMMIT as the pin bump, which is mandatory rather than
+  tidy. pnpm records the pinned pnpm version inside the lockfile under
+  `importers..packageManagerDependencies`, so the moment `packageManager` changes, every
+  `pnpm install --frozen-lockfile` fails with `ERR_PNPM_FROZEN_LOCKFILE_WITH_OUTDATED_LOCKFILE`
+  ("Cannot update packageManagerDependencies"). Splitting the bump and the regen across two commits
+  leaves the intermediate commit unbuildable. The delta is additive only (158 lines, nothing removed):
+  the `@pnpm/exe.*` platform binaries for 12.4.1, emitted as a leading YAML document ahead of the
+  project lockfile. `lockfileVersion` stays `'9.0'`, so this is a prepend, not a rewrite.
+- **ci.yml + audit.yml:** `pnpm/action-setup` bumped `v6.0.10` -> `v6.1.0` (all three call sites).
+  This is a hard prerequisite, not a routine action bump: v6.0.10 cannot install pnpm 12, and v6.1.0
+  exists solely to add support for it. Dependabot had not proposed it, so it is applied by hand.
+- **Audit lane verified unchanged under 12:** `--config.minimumReleaseAgeStrict=false` is still
+  accepted, `pnpm audit --fix=override` still writes overrides, and `pnpm audit --json`'s
+  `{advisories, metadata}` shape is intact, so `audit.yml` and `tests/workflow-guards.test.ts` hold
+  as written.
+
+**Adopter action:** bump `packageManager` to `pnpm@12.4.1` and regenerate `pnpm-lock.yaml` in the
+SAME commit, and bump `pnpm/action-setup` to v6.1.0 in every workflow that installs pnpm — the two
+changes are a single atomic unit and CI breaks if either ships alone. Then verify a
+`--frozen-lockfile` install + build. Check any `.npmrc` or `pnpm-workspace.yaml` key this template
+does not carry against pnpm 12's strict validation, which now hard-fails an unrecognised setting when
+`packageManager` pins a version the running pnpm satisfies.
+
 ## v7 - 2026-08-14
 
 - **tests/workflow-guards.test.ts:** new. Both v6 defects were shell and control-flow errors that read

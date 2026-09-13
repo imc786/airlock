@@ -1,8 +1,8 @@
 # Airlock
 
-The golden pnpm 11 + Dependabot + audit-fix CI template for solo Next.js on Vercel.
+The golden pnpm 12 + Dependabot + audit-fix CI template for solo Next.js on Vercel.
 
-Airlock is a CI-green reference that wires together pnpm 11 supply-chain defaults, a regenerating
+Airlock is a CI-green reference that wires together pnpm 12 supply-chain defaults, a regenerating
 (not appending) audit-fix pipeline, Dependabot cooldown, and SHA-matched unattended auto-merge. It is
 a live repository, not a snapshot: its own workflows run daily and its own Dependabot keeps the action
 SHAs current, so the reference stays current instead of drifting out of date.
