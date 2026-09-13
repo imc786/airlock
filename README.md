@@ -72,7 +72,7 @@ it is stated up front:
 ## Comparison with Renovate
 
 Renovate covers the Dependabot half of this well: automerge, minimum release age, and lockfile
-maintenance. Airlock's novel half is pnpm-11-specific: the `audit --fix=override` regeneration
+maintenance. Airlock's novel half is pnpm-specific: the `audit --fix=override` regeneration
 pipeline, the strict / `trustLockfile` / regen interaction, and override provenance via a committed
 base template. If that half is not your problem, Renovate may be the better fit. If it is, this is the
 part that is hard to assemble from the docs alone.

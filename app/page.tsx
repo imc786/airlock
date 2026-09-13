@@ -65,7 +65,7 @@ export default function Home() {
           Airlock
         </h1>
         <p className="mb-8 text-lg text-muted">
-          A CI-green reference that wires pnpm 11 supply-chain defaults together with a regenerating audit-fix pipeline,
+          A CI-green reference that wires pnpm 12 supply-chain defaults together with a regenerating audit-fix pipeline,
           Dependabot cooldown and SHA-matched unattended auto-merge, for solo Next.js on Vercel. This very site runs the
           pipeline, so the reference stays alive rather than rotting.
         </p>
@@ -123,8 +123,8 @@ export default function Home() {
         <h2 className="mb-3 text-2xl font-semibold">But why not Renovate?</h2>
         <p className="text-muted">
           Renovate covers the Dependabot half of this well: auto-merge, minimum release age and lockfile maintenance.
-          Airlock&apos;s novel half is pnpm-11-specific: the <code>audit --fix=override</code> regeneration pipeline,
-          the strict / trustLockfile / regen interaction, and override provenance via a committed base template. If that
+          Airlock&apos;s novel half is pnpm-specific: the <code>audit --fix=override</code> regeneration pipeline, the
+          strict / trustLockfile / regen interaction, and override provenance via a committed base template. If that
           half is not your problem, Renovate may be the better fit. If it is, this is the wiring nobody else publishes.
         </p>
       </section>
