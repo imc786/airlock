@@ -1,13 +1,13 @@
 {
   "name": "airlock",
   "private": true,
-  "description": "The golden pnpm 11 + Dependabot + audit-fix CI template for solo Next.js on Vercel.",
+  "description": "The golden pnpm 12 + Dependabot + audit-fix CI template for solo Next.js on Vercel.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/imc786/airlock.git"
   },
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=24 <25"
   },

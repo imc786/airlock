@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Airlock - the golden pnpm 11 CI template";
+export const alt = "Airlock - the golden pnpm 12 CI template";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -30,7 +30,7 @@ export default function OpengraphImage() {
         <div style={{ fontSize: "104px", fontWeight: 700 }}>Airlock</div>
       </div>
       <div style={{ marginTop: "36px", fontSize: "38px", color: "#8b949e", maxWidth: "920px" }}>
-        The golden pnpm 11 + Dependabot + audit-fix CI template for solo Next.js on Vercel.
+        The golden pnpm 12 + Dependabot + audit-fix CI template for solo Next.js on Vercel.
       </div>
     </div>,
     size,

@@ -2,7 +2,7 @@
 # regenerated from base + `pnpm audit --fix` output by .github/workflows/audit.yml. Hand-edits to the
 # live file are reverted by the next audit run.
 
-# pnpm 11 reads project settings from here, not from a "pnpm" field in package.json.
+# pnpm reads project settings from here, not from a "pnpm" field in package.json.
 
 # Deny dependency build scripts by default; every package with a build script must be decided here.
 allowBuilds:

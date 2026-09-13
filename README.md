@@ -1,8 +1,8 @@
 # Airlock
 
-The golden pnpm 11 + Dependabot + audit-fix CI template for solo Next.js on Vercel.
+The golden pnpm 12 + Dependabot + audit-fix CI template for solo Next.js on Vercel.
 
-Airlock is a CI-green reference that wires together pnpm 11 supply-chain defaults, a regenerating
+Airlock is a CI-green reference that wires together pnpm 12 supply-chain defaults, a regenerating
 (not appending) audit-fix pipeline, Dependabot cooldown, and SHA-matched unattended auto-merge. It is
 a live repository, not a snapshot: its own workflows run daily and its own Dependabot keeps the action
 SHAs current, so the reference stays current instead of drifting out of date.
@@ -72,7 +72,7 @@ it is stated up front:
 ## Comparison with Renovate
 
 Renovate covers the Dependabot half of this well: automerge, minimum release age, and lockfile
-maintenance. Airlock's novel half is pnpm-11-specific: the `audit --fix=override` regeneration
+maintenance. Airlock's novel half is pnpm-specific: the `audit --fix=override` regeneration
 pipeline, the strict / `trustLockfile` / regen interaction, and override provenance via a committed
 base template. If that half is not your problem, Renovate may be the better fit. If it is, this is the
 part that is hard to assemble from the docs alone.
