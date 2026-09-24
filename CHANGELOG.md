@@ -5,6 +5,18 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v9 - 2026-09-24
+
+- **package.json + pnpm-lock.yaml:** `packageManager` bumped `pnpm@12.4.1` -> `pnpm@12.6.0`. Setting
+  `minimumReleaseAge` explicitly turns on `minimumReleaseAgeStrict`, and pnpm 12.3 to 12.4.1 refuse
+  `pnpm update --no-save` under strict mode. Dependabot always updates the lockfile with `--no-save`,
+  so every npm update job failed with `ERR_PNPM_STRICT_MIN_RELEASE_AGE_REQUIRES_SAVE`. pnpm 12.4.2
+  fixed it; strict mode and the quarantine stay on. The lockfile delta is pnpm's own
+  `packageManagerDependencies` record only.
+
+**Adopter action:** bump `packageManager` to `pnpm@12.6.0` and regenerate `pnpm-lock.yaml` in the
+same commit. A pin bump alone fails `--frozen-lockfile`.
+
 ## v8 - 2026-09-13
 
 - **package.json:** `packageManager` bumped `pnpm@11.21.0` -> `pnpm@12.4.1`, a major. `engines.node`

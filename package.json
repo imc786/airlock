@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/imc786/airlock.git"
   },
-  "packageManager": "pnpm@12.4.1",
+  "packageManager": "pnpm@12.6.0",
   "engines": {
     "node": ">=24 <25"
   },
