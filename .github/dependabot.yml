@@ -21,7 +21,7 @@ updates:
       # Node 24 is the pinned LTS; do not jump @types/node to the next major.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
-      # TypeScript 7.0 breaks `next build` on Next 16; hold on 6.x.
+      # TypeScript 7.0 breaks `next build` on Next 16. Skip 7.0.x only, so 7.1 is proposed once it lands.
       - dependency-name: "typescript"
         versions: ["7.0.x"]
 

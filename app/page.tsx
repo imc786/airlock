@@ -42,6 +42,8 @@ const copyableFiles = [
   ".github/workflows/ci.yml",
   ".github/dependabot.yml",
   ".github/TEMPLATE_VERSION",
+  "biome.json",
+  "tests/ (if you have a unit-test lane)",
   "pnpm-workspace.base.yaml + the live pnpm-workspace.yaml",
   "package.json (the packageManager, engines and script pins)",
   "playwright.config.ts (the PLAYWRIGHT_BASE_URL pattern)",

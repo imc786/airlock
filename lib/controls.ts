@@ -39,6 +39,6 @@ export const controls: Control[] = [
     id: "sha-matched-merge",
     title: "SHA-matched unattended auto-merge",
     summary:
-      "Audit and Dependabot PRs merge only after every gate passes, pinned to the exact commit that was tested, with a blast-radius guard on the audit lane.",
+      "Audit and Dependabot PRs merge only after every gate passes, pinned to the tested head commit. An audit PR must also match main's own regeneration of the lockfile and workspace file, byte for byte.",
   },
 ];
