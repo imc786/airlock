@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 
 // Both defects these tests cover were shell/control-flow, invisible to review but caught instantly by
 // execution. Scripts are extracted from the shipped workflow rather than copied, so a copy cannot rot.
@@ -128,5 +129,162 @@ describe("audit job fail-closed ordering", () => {
     const gate = auditSteps.find((s) => s.name === "Fail closed if advisories remain");
     expect(gate?.body).toMatch(/^\s*run: pnpm audit --no-optional$/m);
     expect(gate?.body).not.toMatch(/^\s*continue-on-error:/m);
+  });
+});
+
+/** Runs a workflow step's script in a scratch dir under bash -e, with a recording stub for pnpm. */
+function runStep(script: string, files: Record<string, string>, keep: string[]) {
+  const dir = mkdtempSync(join(tmpdir(), "airlock-step-"));
+  try {
+    for (const [path, content] of Object.entries(files)) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), content);
+    }
+    const bin = join(dir, ".bin");
+    mkdirSync(bin);
+    const record = `{ echo "$*"; grep '^trustLockfile' pnpm-workspace.yaml || echo unset; } > pnpm-called\n`;
+    writeFileSync(join(bin, "pnpm"), `#!/bin/sh\n${record}`, { mode: 0o755 });
+    let code = 0;
+    try {
+      execFileSync("bash", ["-e", "-c", script], {
+        cwd: dir,
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+        stdio: "pipe",
+      });
+    } catch (error) {
+      code = (error as { status: number | null }).status ?? 1;
+    }
+    const read = (path: string) => {
+      try {
+        return readFileSync(join(dir, path), "utf8");
+      } catch {
+        return undefined;
+      }
+    };
+    return { code, files: Object.fromEntries(keep.map((path) => [path, read(path)])) };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+type Job = {
+  "runs-on": string;
+  if?: string;
+  needs?: string[];
+  steps: { name?: string; uses?: string; run?: string; "continue-on-error"?: boolean; with?: Record<string, string> }[];
+};
+const jobs = (name: string) => (parse(workflow(name)) as { jobs: Record<string, Job> }).jobs;
+
+describe("merge-path trust boundaries", () => {
+  const ci = jobs("ci.yml");
+  const guard = ci["audit-pr-guard"];
+  const audit = jobs("audit.yml")["audit-fix"];
+  const index = (name: string) => guard.steps.findIndex((s) => s.name === name);
+  const REGENERATION = [
+    "Reset managed config to base",
+    "Natural re-resolve (prunes stale overrides)",
+    "Re-apply audit fixes",
+    "Reconcile lockfile with regenerated overrides",
+    "Fail closed if advisories remain",
+  ];
+
+  it("merges an audit PR only after the content guard passes, on the same trust condition", () => {
+    expect(ci["audit-fix-auto-merge"].needs).toEqual(
+      expect.arrayContaining(["build", "preview-e2e", "audit-pr-guard"]),
+    );
+    expect(guard.if).toBe(ci["audit-fix-auto-merge"].if);
+  });
+
+  // The guard's authority is that the PR equals what the audit job produces, so both must run the same
+  // regeneration: a drifted copy would reproduce something else and block every genuine PR.
+  it("reproduces audit.yml's regeneration step for step", () => {
+    const pick = (job: Job) =>
+      REGENERATION.map((name) => {
+        const step = job.steps.find((s) => s.name === name);
+        return { name, run: step?.run, continueOnError: step?.["continue-on-error"] ?? false };
+      });
+    expect(pick(guard).every((step) => step.run)).toBe(true);
+    expect(pick(guard)).toEqual(pick(audit));
+    const order = REGENERATION.map(index);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(guard.steps.filter((s) => s["continue-on-error"]).map((s) => s.name)).toEqual(["Re-apply audit fixes"]);
+  });
+
+  // Every regeneration input comes from main; the PR's files are compared and never read by anything else.
+  it("regenerates from main and only compares the PR's two files", () => {
+    const [main, pr] = guard.steps.filter((s) => s.uses?.startsWith("actions/checkout@"));
+    expect(main.with?.ref).toBe("${{ github.event.pull_request.base.sha }}");
+    expect(main.with?.path).toBeUndefined();
+    expect(pr.with?.path).toBe("pr");
+    expect(pr.with?.["sparse-checkout"]?.trim().split("\n")).toEqual(["pnpm-lock.yaml", "pnpm-workspace.yaml"]);
+    expect(guard.steps.filter((s) => s.run?.includes("pr/")).map((s) => s.name)).toEqual([
+      "Require the PR to match main's regeneration",
+    ]);
+    expect(index("Require the PR to match main's regeneration")).toBeGreaterThan(
+      index("Fail closed if advisories remain"),
+    );
+    expect(index("Refuse pins inside the quarantine window")).toBeGreaterThan(
+      index("Require the PR to match main's regeneration"),
+    );
+  });
+
+  // github.actor is whoever triggered the run, so it is spoofable and changes when a person reopens a PR.
+  it("keys both merge jobs on the PR author and the same repository", () => {
+    for (const job of ["dependabot-auto-merge", "audit-fix-auto-merge"]) {
+      expect(ci[job].if).toContain("github.event.pull_request.user.login ==");
+      expect(ci[job].if).toContain("github.event.pull_request.head.repo.full_name == github.repository");
+      expect(ci[job].if).not.toContain("github.actor");
+    }
+  });
+
+  // ubuntu-latest can move to a new OS release, and so to new apt sources, without a reviewed edit.
+  it("pins every runner to an OS release", () => {
+    for (const [name, job] of [...Object.entries(ci), ...Object.entries(jobs("audit.yml"))]) {
+      expect(job["runs-on"], name).not.toMatch(/-latest$/);
+    }
+  });
+});
+
+describe("audit PR content guard steps", () => {
+  const compare = extractRunBlock(workflow("ci.yml"), "Require the PR to match main's regeneration");
+  const quarantine = extractRunBlock(workflow("ci.yml"), "Refuse pins inside the quarantine window");
+  const regenerated = { "pnpm-workspace.yaml": "trustLockfile: true\n", "pnpm-lock.yaml": "lockfileVersion: '9.0'\n" };
+  const pr = (overrides: Record<string, string> = {}) => ({
+    "pr/pnpm-workspace.yaml": regenerated["pnpm-workspace.yaml"],
+    "pr/pnpm-lock.yaml": regenerated["pnpm-lock.yaml"],
+    ...overrides,
+  });
+
+  it("extracted the real steps, not empty blocks", () => {
+    expect(compare).toContain("cmp");
+    expect(quarantine).toContain("pnpm install --frozen-lockfile --lockfile-only");
+  });
+
+  it("passes a PR identical to main's regeneration", () => {
+    expect(runStep(compare, { ...regenerated, ...pr() }, []).code).toBe(0);
+  });
+
+  it("fails a PR whose lockfile differs by a single edge", () => {
+    const changed = pr({ "pr/pnpm-lock.yaml": "lockfileVersion: '9.0'\n# postcss: react@19.3.0\n" });
+    expect(runStep(compare, { ...regenerated, ...changed }, []).code).not.toBe(0);
+  });
+
+  it("fails a PR whose workspace file differs", () => {
+    const changed = pr({ "pr/pnpm-workspace.yaml": "trustLockfile: true\nallowBuilds:\n  esbuild: true\n" });
+    expect(runStep(compare, { ...regenerated, ...changed }, []).code).not.toBe(0);
+  });
+
+  it("fails when the PR's file is missing rather than treating it as a match", () => {
+    const files = { ...regenerated, "pr/pnpm-workspace.yaml": regenerated["pnpm-workspace.yaml"] };
+    expect(runStep(compare, files, []).code).not.toBe(0);
+  });
+
+  // trustLockfile is what lets CI skip the release-age check, so the check only runs if it is switched off.
+  it("switches trustLockfile off before pnpm verifies release ages", () => {
+    for (const setting of ["trustLockfile: true\n", "trustLockfile: true # skip age re-checks on cold CI\n"]) {
+      const run = runStep(quarantine, { "pnpm-workspace.yaml": setting }, ["pnpm-called"]);
+      expect(run.code).toBe(0);
+      expect(run.files["pnpm-called"]).toBe("install --frozen-lockfile --lockfile-only\ntrustLockfile: false\n");
+    }
   });
 });

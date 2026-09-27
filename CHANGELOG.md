@@ -5,6 +5,26 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v10 - 2026-09-27
+
+- **Audit lane:** a new `audit-pr-guard` job, which the audit merge now waits for. The file-scope check
+  let `pnpm-workspace.yaml` and `pnpm-lock.yaml` change what pnpm installs, and checking the shape of
+  those changes cannot prove `audit --fix` made them. So the guard reruns `audit.yml`'s regeneration
+  from main and requires the PR's two files to match byte for byte; a test keeps both copies of the
+  regeneration identical. It then runs pnpm's release-age check with `trustLockfile` off, so a pin
+  inside the quarantine merges unattended only if `audit --fix` excluded it.
+- **ci.yml:** actionlint and zizmor run in the build job, pinned by SHA-256. Every job blocks egress to
+  an observed allowlist, runners are pinned to the `ubuntu-24.04` OS release because those lists include
+  its apt sources (the image itself still updates weekly), and `next build` runs with telemetry off. The Dependabot merge keys on the PR author,
+  not the spoofable `github.actor`.
+- **biome.json:** the TypeScript override's globs are `**/`: in Biome 2 `*.ts` matched root files only.
+  `noUnreachable` stays on, since tsc skips unreachable code unless `allowUnreachableCode` is false.
+
+**Adopter action:** re-copy both workflows, `biome.json` and the tests (which now need the `yaml`
+devDependency). In the same commit, fix any `useConst`, `noVar` or `noArguments` errors the wider globs
+expose (`biome check --write` is safe for these). Extend the egress allowlists with any host your build
+or tests reach, and keep the `main` ruleset free of bypass actors.
+
 ## v9 - 2026-09-24
 
 - **package.json + pnpm-lock.yaml:** `packageManager` bumped `pnpm@12.4.1` -> `pnpm@12.6.0`. Setting

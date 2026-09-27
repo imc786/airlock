@@ -128,9 +128,8 @@
     }
   },
   "overrides": [
-    { "includes": ["*.tsx", "*.ts"], "linter": { "rules": {} } },
     {
-      "includes": ["*.ts", "*.tsx", "*.mts", "*.cts"],
+      "includes": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
       "linter": {
         "rules": {
           "complexity": { "noArguments": "error" },
@@ -141,7 +140,6 @@
             "noInvalidConstructorSuper": "off",
             "noSetterReturn": "off",
             "noUndeclaredVariables": "off",
-            "noUnreachable": "off",
             "noUnreachableSuper": "off"
           },
           "style": { "useConst": "error" },
