@@ -24,16 +24,16 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "next": "^16.3.7",
-    "posthog-js": "^1.434.17",
+    "next": "^16.3.8",
+    "posthog-js": "^1.434.18",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
+    "@biomejs/biome": "^2.5.15",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^24.13.6",
+    "@types/node": "^24.19.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "postcss": "^8.5.28",
