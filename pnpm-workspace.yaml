@@ -15,4 +15,7 @@ minimumReleaseAge: 1440
 
 # Skip re-applying the age check to the already-committed lockfile on install, so cold-store CI does
 # not go red for ~24h after any dependency change.
+overrides:
+  source-map-js@>=1.0.0 <1.2.2: ^1.2.2
+
 trustLockfile: true
