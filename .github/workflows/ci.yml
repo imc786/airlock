@@ -14,7 +14,7 @@ concurrency:
 permissions:
   contents: read
 
-# ubuntu-24.04, not ubuntu-latest, so an OS release jump (new apt sources) is a reviewed edit. The image
+# ubuntu-24.04, not ubuntu-latest, so an OS release jump (new system libraries) is a reviewed edit. The image
 # itself still updates weekly, so a block-mode job can meet a new host; its harden-runner log names it.
 jobs:
   build:
@@ -98,8 +98,8 @@ jobs:
       statuses: read
 
     steps:
-      # Observed set: Playwright's CDNs, the image's apt sources (the Ubuntu mirror is plain HTTP) and the
-      # preview. *.vercel.app is the one broad entry: preview hosts are per-deployment.
+      # Observed set: Playwright's CDNs and the preview; no apt sources, since nothing here runs apt.
+      # *.vercel.app is the one broad entry: preview hosts are per-deployment.
       - name: Harden runner (block non-allowlisted egress)
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
@@ -111,11 +111,6 @@ jobs:
             cdn.playwright.dev:443
             playwright.download.prss.microsoft.com:443
             storage.googleapis.com:443
-            azure.archive.ubuntu.com:80
-            packages.microsoft.com:443
-            dl.google.com:443
-            esm.ubuntu.com:443
-            motd.ubuntu.com:443
             *.vercel.app:443
 
       - name: Checkout code
