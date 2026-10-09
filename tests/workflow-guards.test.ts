@@ -114,6 +114,9 @@ describe("audit job fail-closed ordering", () => {
   // lockfile and it can pass while the lockfile the PR actually commits is still vulnerable.
   it("verifies advisories after reconciliation and before the change gate", () => {
     const fix = names.indexOf("Re-apply audit fixes");
+    const align = names.indexOf("Align overlapping override targets");
+    expect(align).toBeGreaterThan(fix);
+    expect(names.indexOf("Reconcile lockfile with regenerated overrides")).toBeGreaterThan(align);
     const reconcile = names.indexOf("Reconcile lockfile with regenerated overrides");
     const gate = names.indexOf("Fail closed if advisories remain");
     const change = names.indexOf("Check for changes");
@@ -184,6 +187,7 @@ describe("merge-path trust boundaries", () => {
     "Reset managed config to base",
     "Natural re-resolve (prunes stale overrides)",
     "Re-apply audit fixes",
+    "Align overlapping override targets",
     "Reconcile lockfile with regenerated overrides",
     "Fail closed if advisories remain",
   ];
@@ -235,6 +239,12 @@ describe("merge-path trust boundaries", () => {
       expect(ci[job].if).toContain("github.event.pull_request.head.repo.full_name == github.repository");
       expect(ci[job].if).not.toContain("github.actor");
     }
+  });
+
+  it("installs the Playwright shell without apt", () => {
+    const install = ci["preview-e2e"].steps.find((s) => s.name === "Install Playwright (Chromium)");
+    expect(install?.run).toContain("--only-shell");
+    expect(install?.run).not.toContain("--with-deps");
   });
 
   // ubuntu-latest can move to a new OS release, and so to new apt sources, without a reviewed edit.

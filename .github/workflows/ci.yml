@@ -14,12 +14,12 @@ concurrency:
 permissions:
   contents: read
 
-# ubuntu-24.04, not ubuntu-latest, so an OS release jump (new apt sources) is a reviewed edit. The image
+# ubuntu-24.04, not ubuntu-latest, so an OS release jump (new system libraries) is a reviewed edit. The image
 # itself still updates weekly, so a block-mode job can meet a new host; its harden-runner log names it.
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 8
 
     steps:
       # GitHub's own runner endpoints are allowed implicitly; these are the rest, as observed in audit mode.
@@ -88,7 +88,7 @@ jobs:
   # which also skips the auto-merge jobs that need it.
   preview-e2e:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: build
     if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
@@ -98,8 +98,8 @@ jobs:
       statuses: read
 
     steps:
-      # Observed set: Playwright's CDNs, the image's apt sources (the Ubuntu mirror is plain HTTP) and the
-      # preview. *.vercel.app is the one broad entry: preview hosts are per-deployment.
+      # Observed set: Playwright's CDNs and the preview; no apt sources, since nothing here runs apt.
+      # *.vercel.app is the one broad entry: preview hosts are per-deployment.
       - name: Harden runner (block non-allowlisted egress)
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
@@ -111,11 +111,6 @@ jobs:
             cdn.playwright.dev:443
             playwright.download.prss.microsoft.com:443
             storage.googleapis.com:443
-            azure.archive.ubuntu.com:80
-            packages.microsoft.com:443
-            dl.google.com:443
-            esm.ubuntu.com:443
-            motd.ubuntu.com:443
             *.vercel.app:443
 
       - name: Checkout code
@@ -135,8 +130,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Log runner image
+        run: echo "$ImageOS $ImageVersion"
+
+      # The image ships the browser libraries; restore --with-deps if a launch fails for a missing one.
       - name: Install Playwright (Chromium)
-        run: pnpm exec playwright install chromium --with-deps
+        run: pnpm exec playwright install chromium --only-shell
 
       - name: Wait for Vercel preview deployment
         id: vercel-preview
@@ -144,7 +143,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           allow_inactive: false
-          max_timeout: 600
+          max_timeout: 300
 
       - name: End-to-end tests (against Vercel preview)
         env:
@@ -238,6 +237,10 @@ jobs:
       - name: Re-apply audit fixes
         continue-on-error: true
         run: pnpm audit --fix=override --no-optional --config.minimumReleaseAgeStrict=false
+
+      # Overlapping selectors resolve to a weaker target and keep a vulnerable version.
+      - name: Align overlapping override targets
+        run: node .github/scripts/align-overrides.mjs
 
       - name: Reconcile lockfile with regenerated overrides
         run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false
