@@ -5,6 +5,20 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
+## v11 - 2026-10-09
+
+- **ci.yml:** `preview-e2e` installs the Playwright headless shell with `--only-shell` and no longer
+  runs `--with-deps`: the `ubuntu-24.04` image already has the libraries and the apt step occasionally
+  hung. A new step logs the runner image so a missing-library failure traces to one. Timeouts follow
+  measured runs: `build` 8 minutes, `preview-e2e` 10, and the Vercel preview wait 300 seconds.
+- **audit.yml + audit-pr-guard:** a new `Align overlapping override targets` step runs
+  `.github/scripts/align-overrides.mjs` between the fix and the reconcile. `audit --fix=override` adds
+  overlapping selectors for one package, pnpm applies a weaker one, and the locked vulnerable version
+  survives the reconcile. The step raises each added selector to the highest target within its major.
+- **Adopter action:** re-copy `ci.yml`, `audit.yml`, `.github/scripts/align-overrides.mjs`,
+  `biome.json`, `tests/align-overrides.test.ts` and `tests/workflow-guards.test.ts`. If your e2e needs system
+  libraries the image lacks, restore `--with-deps` and drop the guard for it.
+
 ## v10 - 2026-09-27
 
 - **Audit lane:** a new `audit-pr-guard` job, which the audit merge now waits for. The file-scope check

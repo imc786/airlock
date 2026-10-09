@@ -91,6 +91,10 @@ jobs:
         continue-on-error: true
         run: pnpm audit --fix=override --no-optional --config.minimumReleaseAgeStrict=false
 
+      # Overlapping selectors resolve to a weaker target and keep a vulnerable version.
+      - name: Align overlapping override targets
+        run: node .github/scripts/align-overrides.mjs
+
       - name: Reconcile lockfile with regenerated overrides
         run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false
 

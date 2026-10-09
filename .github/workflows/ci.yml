@@ -19,7 +19,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 8
 
     steps:
       # GitHub's own runner endpoints are allowed implicitly; these are the rest, as observed in audit mode.
@@ -88,7 +88,7 @@ jobs:
   # which also skips the auto-merge jobs that need it.
   preview-e2e:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: build
     if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
@@ -135,8 +135,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Log runner image
+        run: echo "$ImageOS $ImageVersion"
+
+      # The image ships the browser libraries; restore --with-deps if a launch fails for a missing one.
       - name: Install Playwright (Chromium)
-        run: pnpm exec playwright install chromium --with-deps
+        run: pnpm exec playwright install chromium --only-shell
 
       - name: Wait for Vercel preview deployment
         id: vercel-preview
@@ -144,7 +148,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           allow_inactive: false
-          max_timeout: 600
+          max_timeout: 300
 
       - name: End-to-end tests (against Vercel preview)
         env:
@@ -238,6 +242,10 @@ jobs:
       - name: Re-apply audit fixes
         continue-on-error: true
         run: pnpm audit --fix=override --no-optional --config.minimumReleaseAgeStrict=false
+
+      # Overlapping selectors resolve to a weaker target and keep a vulnerable version.
+      - name: Align overlapping override targets
+        run: node .github/scripts/align-overrides.mjs
 
       - name: Reconcile lockfile with regenerated overrides
         run: pnpm install --lockfile-only --no-frozen-lockfile --config.minimumReleaseAgeStrict=false

@@ -28,7 +28,13 @@ unattended:
   `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. The workflow regenerates the lockfile in a second pass.
 - **The two-pass ordering is load-bearing.** Applying the fix before the natural re-resolve finds
   nothing, then silently re-resolves back to vulnerable versions. Reset to base, re-resolve, then
-  re-fix, in that order.
+  re-fix, align, reconcile, in that order.
+- **Overlapping selectors must be aligned before the reconcile.** pnpm applies a weaker selector's
+  target (`smol-toml@<1.6.1: ^1.6.1` beside `smol-toml@<=1.8.0: ^1.9.0`), the locked vulnerable version
+  satisfies it and the reconcile keeps it. `.github/scripts/align-overrides.mjs` raises every selector
+  the fix added to the highest target within the same package and major, and leaves base entries
+  alone. All 0.x targets share one group. Overlapping selectors across majors are left as written,
+  and the fail-closed audit catches them.
 - **Dependabot does not bump the pnpm pin itself.** The `packageManager` field is left untouched
   ([dependabot-core#4830](https://github.com/dependabot/dependabot-core/issues/4830) is still open),
   so the one dependency the whole pipeline runs on is the one nothing auto-maintains. The audit job
@@ -105,14 +111,15 @@ Copy these files:
 
 - `.github/workflows/audit.yml`
 - `.github/workflows/ci.yml`
+- `.github/scripts/align-overrides.mjs`, which both workflows run
 - `.github/dependabot.yml`
 - `.github/TEMPLATE_VERSION`
 - `biome.json`. Its TypeScript override uses `**/` globs: Biome 2 resolves globs against the config, so
   a bare `*.ts` matches root files only
-- `tests/workflow-guards.test.ts` and `tests/biome-config.test.ts`, if you have a unit-test lane. They
-  assert your copies of the workflows and `biome.json` still behave, including that the audit PR guard
-  reproduces `audit.yml` step for step, so they are only worth copying alongside them. They need the
-  `vitest` and `yaml` devDependencies, a config whose `include` covers `tests/**/*.test.ts`, a `test`
+- `tests/workflow-guards.test.ts`, `tests/align-overrides.test.ts` and `tests/biome-config.test.ts`,
+  if you have a unit-test lane. They assert your copies of the workflows, the script and `biome.json`
+  still behave, including that the audit PR guard reproduces `audit.yml` step for step, so they are
+  only worth copying alongside them. They need the `vitest` and `yaml` devDependencies, a config whose `include` covers `tests/**/*.test.ts`, a `test`
   script, and a `pnpm test` step in `ci.yml`'s build job. Repos with no unit-test lane must add those
   first, or skip the tests: the workflows are complete without them
 - `pnpm-workspace.base.yaml` **and** the live `pnpm-workspace.yaml` (see step 4: the live file must
@@ -181,9 +188,9 @@ Node needs no edit: the workflows read `engines.node` from `package.json` via
 
 - **`.github/workflows/audit.yml`** runs daily. It resets `pnpm-workspace.yaml` to
   `pnpm-workspace.base.yaml`, re-resolves the lockfile, re-applies `pnpm audit --fix=override`,
-  reconciles the lockfile, and opens a PR only if something changed. The fix step is
-  `continue-on-error`, so a mandatory `pnpm audit` runs after reconciliation and fails the job before
-  any PR is opened: a failed fix must never ship a PR that prunes live overrides. A new advisory with
+  aligns overlapping override targets, reconciles the lockfile, and opens a PR only if something
+  changed. The fix step is `continue-on-error`, so a mandatory `pnpm audit` runs after
+  reconciliation and fails the job before any PR is opened: a failed fix must never ship a PR that prunes live overrides. A new advisory with
   no published fix therefore turns the job red until you add it to `auditConfig.ignoreGhsas` or a
   patched release lands. It also fails loudly if the automation identity or token is missing, and
   warns when the pinned pnpm falls behind the registry.
