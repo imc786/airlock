@@ -24,7 +24,7 @@ jobs:
     steps:
       # GitHub's own runner endpoints are allowed implicitly; these are the rest, as observed in audit mode.
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -101,7 +101,7 @@ jobs:
       # Observed set: Playwright's CDNs and the preview; no apt sources, since nothing here runs apt.
       # *.vercel.app is the one broad entry: preview hosts are per-deployment.
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -166,7 +166,7 @@ jobs:
     steps:
       # Merge jobs only talk to GitHub, so egress is blocked to exactly that.
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -204,7 +204,7 @@ jobs:
 
     steps:
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -294,7 +294,7 @@ jobs:
     steps:
       # Merge jobs only talk to GitHub, so egress is blocked to exactly that.
       - name: Harden runner (block non-allowlisted egress)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: block
           allowed-endpoints: >
