@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "next": "^16.3.8",
-    "posthog-js": "^1.435.9",
+    "posthog-js": "^1.436.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
@@ -33,7 +33,7 @@
     "@biomejs/biome": "^2.5.15",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^24.19.1",
+    "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "postcss": "^8.5.29",
