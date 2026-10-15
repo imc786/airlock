@@ -25,13 +25,13 @@
   },
   "dependencies": {
     "next": "^16.4.0",
-    "posthog-js": "^1.438.2",
+    "posthog-js": "^1.438.7",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
@@ -39,7 +39,7 @@
     "postcss": "^8.5.29",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0",
+    "vitest": "^5.0.4",
     "yaml": "^2.9.1"
   }
 }
