@@ -15,4 +15,7 @@ minimumReleaseAge: 1440
 
 # Skip re-applying the age check to the already-committed lockfile on install, so cold-store CI does
 # not go red for ~24h after any dependency change.
+overrides:
+  vite@>=8.0.0 <=8.1.5: ^8.1.6
+
 trustLockfile: true
