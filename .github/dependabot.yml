@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
     # Quarantine freshly published versions before adoption; security updates bypass cooldown, so CVE
     # fixes still arrive immediately. Windows >=3 days also keep strict minimumReleaseAge quiet.
     cooldown:
@@ -29,7 +29,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
     cooldown:
       default-days: 7
     groups:
