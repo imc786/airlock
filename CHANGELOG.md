@@ -5,7 +5,7 @@ entry says what changed and any action needed when re-syncing a repo that copied
 
 Tags are immutable: a published tag is never moved, only superseded by a new one.
 
-## Unreleased
+## v12 - 2026-10-24
 
 - **dependabot.yml:** version updates for npm and github-actions run monthly instead of daily. Each
   Dependabot PR costs a CI run, so this cuts Actions minutes on every site that copies the template.
