@@ -162,15 +162,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  next@>=16.3.0 <=16.4.4: ^16.4.5
-
 importers:
 
   .:
     dependencies:
       next:
-        specifier: ^16.4.5
+        specifier: ^16.4.3
         version: 16.4.6(@playwright/test@1.64.1)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       posthog-js:
         specifier: ^1.438.24
